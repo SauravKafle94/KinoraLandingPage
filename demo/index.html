@@ -1,26 +1,280 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kinora - Live Interactive Demo</title>
+    <title>Kinora - Live Telemetry Demo</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #1E1E1E;
+            background-color: #0f172a; /* slate-900 */
+            color: #f8fafc;
         }
-        iframe {
-            width: 100vw;
-            height: 100vh;
-            border: none;
-            display: block;
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* The glow effect for the radar container */
+        .live-glow {
+            box-shadow: 0 0 30px rgba(45, 212, 191, 0.15), inset 0 0 20px rgba(45, 212, 191, 0.05);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+        }
+        
+        /* Custom scrollbar for event log */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
         }
     </style>
 </head>
-<body>
-    <!-- Embeds your existing Render app seamlessly into the path -->
-    <iframe src="https://kinoracare-dashboard.onrender.com"></iframe>
+<body class="antialiased h-screen flex flex-col overflow-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- Navbar -->
+    <header class="h-16 glass-panel border-b border-slate-800 flex items-center justify-between px-6 shrink-0 z-20 relative">
+        <div class="flex items-center gap-6">
+            <!-- Logo -->
+            <div class="flex items-center gap-2">
+                <svg class="w-6 h-6 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span class="font-bold text-lg tracking-tight">Kinora<span class="text-brand-400">.care</span></span>
+            </div>
+            
+            <div class="h-5 w-px bg-slate-700 hidden sm:block"></div>
+            
+            <!-- Online Indicator -->
+            <div class="hidden sm:flex items-center gap-2 bg-slate-800/80 rounded-full px-3 py-1.5 border border-slate-700 shadow-inner">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500 shadow-[0_0_8px_#22c55e]"></span>
+                </span>
+                <span class="text-xs font-semibold text-slate-300 tracking-wider uppercase">System Status: Online</span>
+            </div>
+        </div>
+        
+        <!-- CTA -->
+        <div>
+            <a href="/" class="bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 border border-brand-500/30 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-[0_0_15px_rgba(45,212,191,0.1)] hover:shadow-[0_0_20px_rgba(45,212,191,0.2)]">
+                Request Commercial Deployment
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="flex-1 p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden relative z-10">
+        <!-- Ambient background glow for depth -->
+        <div class="absolute top-1/2 left-1/3 -translate-y-1/2 -translate-x-1/2 w-[40rem] h-[40rem] bg-brand-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <!-- Left Column: Spatial Telemetry Map -->
+        <div class="lg:col-span-2 flex flex-col gap-4 min-h-0 relative">
+            <div class="flex items-center justify-between shrink-0">
+                <h2 class="text-lg font-semibold text-white tracking-tight">De-identified Spatial Telemetry</h2>
+                <div class="flex items-center gap-2 text-xs font-semibold text-brand-300 bg-brand-900/30 border border-brand-500/20 px-2.5 py-1.5 rounded uppercase tracking-wider">
+                    <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    Zero-Camera AI Analysis
+                </div>
+            </div>
+            
+            <div class="glass-panel live-glow rounded-2xl flex-1 relative overflow-hidden flex items-center justify-center bg-slate-950">
+                <!-- Tech Grid Lines Overlay -->
+                <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none z-10"></div>
+                
+                <!-- Crosshairs overlay -->
+                <div class="absolute inset-0 pointer-events-none z-10 flex items-center justify-center opacity-20">
+                    <div class="w-full h-px bg-brand-500"></div>
+                    <div class="absolute h-full w-px bg-brand-500"></div>
+                    <div class="absolute w-32 h-32 rounded-full border border-brand-500"></div>
+                    <div class="absolute w-64 h-64 rounded-full border border-brand-500 border-dashed"></div>
+                </div>
+
+                <!-- Radar Image Placeholder -->
+                <img src="radar-demo.gif" alt="Live Radar Telemetry Feed" class="w-full h-full object-cover opacity-90 mix-blend-screen relative z-0" 
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiMwZjE3MmEiIC8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJJbnRlciIgZm9udC13ZWlnaHQ9IjUwMCIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzQ3NTU2OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+W0F3YWl0aW5nIFJhZGFyIFNpZ25hbCBJbnB1dF08L3RleHQ+PC9zdmc+'">
+                
+                <!-- Corner Brackets (HUD Vibe) -->
+                <div class="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-brand-500/50 z-20"></div>
+                <div class="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-brand-500/50 z-20"></div>
+                <div class="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-brand-500/50 z-20"></div>
+                <div class="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-brand-500/50 z-20"></div>
+                
+                <!-- Simulated coordinate overlay -->
+                <div class="absolute bottom-4 right-6 text-[10px] font-mono text-brand-500/60 z-20 text-right">
+                    LAT: 1.3521° N<br>
+                    LONG: 103.8198° E<br>
+                    ELV: 15.2M
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Vitals & System Logs -->
+        <div class="flex flex-col gap-6 min-h-0">
+            
+            <!-- Vitals Section -->
+            <div class="shrink-0">
+                <h2 class="text-lg font-semibold text-white mb-4 tracking-tight">Live Biometric Analysis</h2>
+                <div class="grid grid-cols-1 gap-4">
+                    
+                    <!-- Heart Rate Card -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden border border-slate-700/50 group hover:border-slate-600 transition-colors">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-rose-500/50 rounded-l"></div>
+                        <div class="flex justify-between items-start mb-1">
+                            <div class="text-slate-400 font-semibold text-xs tracking-wider uppercase flex items-center gap-2">
+                                <svg class="w-4 h-4 text-rose-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                                Heart Rate
+                            </div>
+                            <span class="text-[10px] font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-2 py-0.5 rounded">BPM</span>
+                        </div>
+                        <div class="flex items-end gap-3 mt-2">
+                            <span id="heart-rate" class="text-5xl font-extrabold text-white tracking-tighter tabular-nums">72</span>
+                            <div class="flex-1 pb-1">
+                                <!-- Static decorative ECG wave -->
+                                <svg class="w-full h-8 text-rose-500/40 opacity-70" viewBox="0 0 100 30" preserveAspectRatio="none">
+                                    <polyline fill="none" stroke="currentColor" stroke-width="2" points="0,15 15,15 20,5 25,28 30,15 100,15"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Breathing Rate Card -->
+                    <div class="glass-panel p-6 rounded-2xl relative overflow-hidden border border-slate-700/50 group hover:border-slate-600 transition-colors">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500/50 rounded-l"></div>
+                        <div class="flex justify-between items-start mb-1">
+                            <div class="text-slate-400 font-semibold text-xs tracking-wider uppercase flex items-center gap-2">
+                                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                Respiratory Rate
+                            </div>
+                            <span class="text-[10px] font-bold text-blue-300 bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded">BR/MIN</span>
+                        </div>
+                        <div class="flex items-end gap-3 mt-2">
+                            <span id="breathing-rate" class="text-5xl font-extrabold text-white tracking-tighter tabular-nums">16</span>
+                            <div class="flex-1 flex items-end justify-end gap-1 h-10 pb-1">
+                                <!-- Static decorative bar chart -->
+                                <div class="w-1.5 h-3 bg-blue-500/20 rounded-t"></div>
+                                <div class="w-1.5 h-6 bg-blue-500/40 rounded-t"></div>
+                                <div class="w-1.5 h-4 bg-blue-500/30 rounded-t"></div>
+                                <div class="w-1.5 h-8 bg-blue-500/60 rounded-t"></div>
+                                <div class="w-1.5 h-5 bg-blue-500/40 rounded-t"></div>
+                                <div class="w-1.5 h-4 bg-blue-500/30 rounded-t"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="flex-1 flex flex-col min-h-0">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-white tracking-tight">System Event Log</h2>
+                    <div class="w-2 h-2 rounded-full bg-slate-600 animate-pulse"></div>
+                </div>
+                <div class="glass-panel rounded-2xl p-5 flex-1 overflow-y-auto border border-slate-700/50 shadow-inner bg-slate-900/40">
+                    <ul class="space-y-4 font-mono text-xs" id="event-log">
+                        <li class="flex gap-3 text-slate-300">
+                            <span class="text-slate-500 shrink-0" id="time-1">14:02:11</span>
+                            <span class="text-brand-400 shrink-0">[INFO]</span>
+                            <span class="opacity-90">Baseline vitals calibrated and locked.</span>
+                        </li>
+                        <li class="flex gap-3 text-slate-300">
+                            <span class="text-slate-500 shrink-0" id="time-2">14:02:05</span>
+                            <span class="text-brand-400 shrink-0">[INFO]</span>
+                            <span class="opacity-90">Target identified in spatial Zone B.</span>
+                        </li>
+                        <li class="flex gap-3 text-slate-300">
+                            <span class="text-slate-500 shrink-0" id="time-3">14:01:48</span>
+                            <span class="text-blue-400 shrink-0">[SYS]</span>
+                            <span class="opacity-90">Continuous millimeter-wave sweep active.</span>
+                        </li>
+                        <li class="flex gap-3 text-slate-300">
+                            <span class="text-slate-500 shrink-0" id="time-4">14:01:47</span>
+                            <span class="text-green-400 shrink-0">[OK]</span>
+                            <span class="opacity-90">Primary radar sensor array initialized.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Simulation JavaScript -->
+    <script>
+        // Utility for random ranges
+        const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+        // Elements
+        const hrElement = document.getElementById('heart-rate');
+        const brElement = document.getElementById('breathing-rate');
+
+        // Heart Rate Simulation (Updates every 2 seconds)
+        setInterval(() => {
+            hrElement.innerText = randomInt(68, 74);
+            
+            // Soft heartbeat animation
+            hrElement.style.transform = 'scale(1.05)';
+            hrElement.style.color = '#fecdd3'; // rose-200
+            hrElement.style.transition = 'all 0.1s ease-out';
+            
+            setTimeout(() => {
+                hrElement.style.transform = 'scale(1)';
+                hrElement.style.color = '#ffffff';
+                hrElement.style.transition = 'all 0.3s ease-in';
+            }, 100);
+        }, 2000);
+
+        // Breathing Rate Simulation (Updates every 3 seconds)
+        setInterval(() => {
+            brElement.innerText = randomInt(14, 18);
+        }, 3000);
+
+        // Set realistic timestamps on load for the event log
+        const setTime = (id, offsetSec) => {
+            const d = new Date(Date.now() - offsetSec * 1000);
+            const timeStr = d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
+            document.getElementById(id).innerText = timeStr;
+        }
+        
+        setTime('time-1', 4);
+        setTime('time-2', 10);
+        setTime('time-3', 27);
+        setTime('time-4', 28);
+    </script>
 </body>
 </html>
